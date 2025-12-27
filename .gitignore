@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+
+# Environment & secrets
+.env
+
+# Runtime state
+data/last_seen.txt
+
+# Playwright
+.playwright/
+
+# OS
+.DS_Store
+
+# Distribution / packaging
+build/
+course_seat_monitor.egg-info/
