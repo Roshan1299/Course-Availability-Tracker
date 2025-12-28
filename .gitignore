@@ -20,3 +20,5 @@ data/last_seen.txt
 # Distribution / packaging
 build/
 course_seat_monitor.egg-info/
+
+Old/
