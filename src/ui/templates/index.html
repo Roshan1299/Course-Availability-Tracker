@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Course Availability Tracker</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <header>
+    <h1>🎓 Course Availability Tracker</h1>
+    <p>Monitor seat availability in real time</p>
+  </header>
+
+  <label>
+  <input type="checkbox" id="notify" checked />
+  Email me on seat changes
+  </label>
+
+
+  <section class="card">
+    <h2>Add Monitor</h2>
+
+    <form id="monitor-form">
+      <input required placeholder="Course URL" id="url" />
+      <input required placeholder="Course Code (e.g. CMPUT 402)" id="course_code" />
+      <input required placeholder="Section Label (e.g. LEC B1)" id="section_label" />
+      <input type="number" min="30" value="90" id="interval" />
+
+      <button type="submit">Start Monitoring</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>Active Monitors</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Course</th>
+          <th>Section</th>
+          <th>Last Seen</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="monitors"></tbody>
+    </table>
+  </section>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
