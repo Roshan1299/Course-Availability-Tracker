@@ -4,7 +4,7 @@ from api.schemas import MonitorCreate, MonitorStatus
 router = APIRouter()
 
 
-@router.post("/monitors", response_model=MonitorStatus)
+@router.post("/monitors", response_model=MonitorStatus, response_model_exclude_none=False)
 async def create_monitor(payload: MonitorCreate, request: Request):
     manager = request.app.state.monitor_manager
     browser = request.app.state.browser
@@ -15,6 +15,7 @@ async def create_monitor(payload: MonitorCreate, request: Request):
         course_code=payload.course_code,
         section_label=payload.section_label,
         interval=payload.check_every_seconds,
+        notify=payload.notify,
     )
 
     monitor = manager.monitors[monitor_id]
@@ -25,10 +26,12 @@ async def create_monitor(payload: MonitorCreate, request: Request):
         section_label=monitor.section_label,
         last_seen=monitor.last_seen,
         running=True,
+        last_checked_at=monitor.last_checked_at,
+        last_changed_at=monitor.last_changed_at,
     )
 
 
-@router.get("/monitors", response_model=list[MonitorStatus])
+@router.get("/monitors", response_model=list[MonitorStatus], response_model_exclude_none=False)
 def list_monitors(request: Request):
     manager = request.app.state.monitor_manager
 
@@ -39,6 +42,8 @@ def list_monitors(request: Request):
             section_label=m.section_label,
             last_seen=m.last_seen,
             running=True,
+            last_checked_at=m.last_checked_at,
+            last_changed_at=m.last_changed_at,
         )
         for m in manager.list_monitors()
     ]
