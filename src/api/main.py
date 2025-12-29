@@ -5,6 +5,7 @@ from fastapi.responses import HTMLResponse
 from pathlib import Path
 from api.routes import router
 from services.monitor_manager import MonitorManager
+import asyncio
 
 app = FastAPI(
     title="Course Availability Tracker API",
@@ -21,6 +22,25 @@ async def startup():
     app.state.playwright = await async_playwright().start()
     app.state.browser = await app.state.playwright.chromium.launch(headless=True)
 
+    manager = app.state.monitor_manager
+
+    # 🔁 Resume persisted monitors
+    for monitor in manager.monitors.values():
+        context = await app.state.browser.new_context()
+        page = await context.new_page()
+
+        monitor.task = asyncio.create_task(
+            manager._monitor_loop(
+                monitor.id,
+                page,
+                monitor.url,
+                monitor.course_code,
+                monitor.section_label,
+                monitor.interval,
+            )
+        )
+
+    print(f"✅ Restored {len(manager.monitors)} persisted monitors")
 
 @app.on_event("shutdown")
 async def shutdown():
