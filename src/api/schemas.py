@@ -16,3 +16,5 @@ class MonitorStatus(BaseModel):
     section_label: str
     last_seen: Optional[str]
     running: bool
+    last_checked_at: Optional[str]
+    last_changed_at: Optional[str]
