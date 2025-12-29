@@ -8,38 +8,61 @@
 <body>
   <header>
     <h1>🎓 Course Availability Tracker</h1>
-    <p>Monitor seat availability in real time</p>
+    <p>Never miss an open seat again</p>
   </header>
 
-  <p class="helper">
-  👉 <a
-    href="https://register.beartracks.ualberta.ca/criteria.jsp"
-    target="_blank"
-    rel="noopener noreferrer"
-  >
-    Open BearTracks Schedule Builder
-  </a>
-  <br />
-  Build your schedule, then copy the URL and paste it below.
-</p>
+  <div class="onboarding">
+    <h3>🚀 How to Get Started</h3>
+    <ol>
+      <li>
+        <strong>Visit <a href="https://register.beartracks.ualberta.ca/criteria.jsp" target="_blank" rel="noopener noreferrer">BearTracks Schedule Builder</a></strong>
+        <br />Build your schedule and add the courses you want to monitor
+      </li>
+      <li>
+        <strong>Copy the page URL</strong>
+        <br />Once your courses are listed, copy the full URL from your browser
+      </li>
+      <li>
+        <strong>Paste below and start monitoring</strong>
+        <br />We'll watch seat availability in the background
+      </li>
+    </ol>
+  </div>
 
   <section class="card">
-    <h2>Add Monitor</h2>
+    <h2>Set Up Monitoring</h2>
 
     <form id="monitor-form">
-      <input required placeholder="Course URL" id="url" />
+      <input required placeholder="Paste your BearTracks URL here" id="url" />
       <input required placeholder="Course Code (e.g. CMPUT 402)" id="course_code" />
-      <input required placeholder="Section Label (e.g. LEC B1)" id="section_label" />
-      <input type="number" min="30" value="90" id="interval" />
+      <input required placeholder="Section (e.g. LEC B1, LAB D1)" id="section_label" />
+      <input type="number" min="30" value="90" id="interval" placeholder="Check every X seconds" />
 
       <label>
         <input type="checkbox" id="notify" checked />
-        Email me on seat changes
+        Send email notifications when seats become available
       </label>
 
       <button type="submit">Start Monitoring</button>
     </form>
   </section>
+
+  <div class="info-section">
+    <h3>🧠 Understanding Monitor Status</h3>
+    <div class="status-grid">
+      <div class="status-item">
+        <h4>Mode (What you want)</h4>
+        <p>▶ <strong>Active:</strong> Monitoring is running</p>
+        <p>⏸ <strong>Paused:</strong> Temporarily stopped</p>
+      </div>
+      <div class="status-item">
+        <h4>Health (What's happening)</h4>
+        <p>🟢 <strong>Healthy:</strong> Page loaded, data fetched successfully</p>
+        <p>🟡 <strong>Stale:</strong> Course/section not found on page</p>
+        <p>🔴 <strong>Error:</strong> Issue checking page</p>
+      </div>
+    </div>
+  </div>
 
   <section class="card">
     <h2>Active Monitors</h2>
@@ -51,13 +74,50 @@
           <th>Last Seen</th>
           <th>Last Checked</th>
           <th>Last Changed</th>
-          <th>Status</th>
-          <th></th>
+          <th>Mode</th>
+          <th>Health</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody id="monitors"></tbody>
     </table>
   </section>
+
+  <div class="info-section">
+    <h3>📜 Notification History</h3>
+    <p>Every seat change notification is saved in your history. Click <strong>View History</strong> on any monitor to see past notifications for that course.</p>
+  </div>
+
+  <div class="info-section">
+    <h3>💡 Tips</h3>
+    <ul>
+      <li>Use longer check intervals (60–120 seconds) to reduce load</li>
+      <li>You can monitor multiple courses simultaneously</li>
+      <li>Paused monitors keep their history and can be resumed instantly</li>
+    </ul>
+  </div>
+
+  <!-- Modal for notification history -->
+  <div id="history-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Notification History</h3>
+        <span class="close">&times;</span>
+      </div>
+      <div class="modal-body">
+        <table id="history-table">
+          <thead>
+            <tr>
+              <th>From</th>
+              <th>To</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody id="history-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
   <script src="/static/app.js"></script>
 </body>
