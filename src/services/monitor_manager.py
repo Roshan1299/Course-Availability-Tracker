@@ -2,9 +2,11 @@ import asyncio
 from dataclasses import dataclass
 from typing import Dict, Optional
 from uuid import uuid4
+from datetime import datetime
 
 from seat_monitor.scraper import fetch_seat_value
 from seat_monitor.notifier import send_email
+from services.persistence import load_state, save_state
 
 
 @dataclass
@@ -17,11 +19,14 @@ class Monitor:
     last_seen: Optional[str]
     notify: bool
     task: asyncio.Task
+    last_checked_at: Optional[str] = None
+    last_changed_at: Optional[str] = None
 
 
 class MonitorManager:
     def __init__(self):
         self.monitors: Dict[str, Monitor] = {}
+        self._load_persisted_monitors()
 
     async def _monitor_loop(
         self,
@@ -44,12 +49,24 @@ class MonitorManager:
 
                 monitor = self.monitors[monitor_id]
 
-                if value:
+                # Update last checked timestamp
+                current_time = datetime.now().isoformat()
+                monitor.last_checked_at = current_time
+
+                if value is None:
+                    print(f"[monitor {monitor_id}] WARNING: Could not find seat value for {course_code} {section_label}")
+                else:
                     if monitor.last_seen is None:
                         monitor.last_seen = value
+                        monitor.last_changed_at = current_time
+                        print(
+                            f"[monitor {monitor_id}] INITIAL {course_code} {section_label} = {value} at {current_time}"
+                        )
+                        # Update persistence with new last_seen and timestamps
+                        self._persist_state()
                     elif value != monitor.last_seen:
                         print(
-                            f"[monitor {monitor_id}] CHANGE {monitor.last_seen} → {value}"
+                            f"[monitor {monitor_id}] CHANGE {monitor.last_seen} → {value} at {current_time}"
                         )
 
                         if monitor.notify:
@@ -61,18 +78,26 @@ class MonitorManager:
                                     f"Section: {section_label}\n"
                                     f"Previous: {monitor.last_seen}\n"
                                     f"Current: {value}\n"
+                                    f"Time: {current_time}\n"
                                     f"URL: {url}"
                                 ),
                             )
 
                         monitor.last_seen = value
+                        monitor.last_changed_at = current_time
+                        # Update persistence with new last_seen and timestamps
+                        self._persist_state()
                     else:
                         print(
-                            f"[monitor {monitor_id}] {course_code} {section_label} = {value}"
+                            f"[monitor {monitor_id}] {course_code} {section_label} = {value} at {current_time}"
                         )
 
             except Exception as e:
                 print(f"[monitor {monitor_id}] error: {e}")
+
+            finally:
+                self._persist_state()
+                await asyncio.sleep(interval)
 
             await asyncio.sleep(interval)
 
@@ -101,6 +126,9 @@ class MonitorManager:
             )
         )
 
+        # Initialize timestamps when creating a new monitor
+        current_time = datetime.now().isoformat()
+
         self.monitors[monitor_id] = Monitor(
             id=monitor_id,
             url=url,
@@ -110,8 +138,11 @@ class MonitorManager:
             last_seen=None,
             notify=notify,
             task=task,
+            last_checked_at=current_time,  # Initialize with current time
+            last_changed_at=None,  # Will be set when a change occurs
         )
 
+        self._persist_state()
         return monitor_id
 
     async def stop_monitor(self, monitor_id: str) -> bool:
@@ -121,7 +152,43 @@ class MonitorManager:
 
         monitor.task.cancel()
         del self.monitors[monitor_id]
+        self._persist_state()
         return True
 
     def list_monitors(self):
         return list(self.monitors.values())
+    
+    def _load_persisted_monitors(self):
+        persisted = load_state()
+
+        for monitor_id, data in persisted.items():
+            self.monitors[monitor_id] = Monitor(
+                id=monitor_id,
+                url=data["url"],
+                course_code=data["course_code"],
+                section_label=data["section_label"],
+                interval=data["interval"],
+                last_seen=data.get("last_seen"),
+                notify=data.get("notify", True),
+                task=None,  # task will be created later when resumed
+                last_checked_at=data.get("last_checked_at"),  # Could be None for old monitors
+                last_changed_at=data.get("last_changed_at"),  # Could be None for old monitors
+            )
+
+    def _persist_state(self):
+        save_state(
+            {
+                m.id: {
+                    "url": m.url,
+                    "course_code": m.course_code,
+                    "section_label": m.section_label,
+                    "interval": m.interval,
+                    "last_seen": m.last_seen,
+                    "notify": m.notify,
+                    "last_checked_at": m.last_checked_at,
+                    "last_changed_at": m.last_changed_at,
+                }
+                for m in self.monitors.values()
+            }
+        )
+
