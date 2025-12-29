@@ -11,11 +11,17 @@
     <p>Monitor seat availability in real time</p>
   </header>
 
-  <label>
-  <input type="checkbox" id="notify" checked />
-  Email me on seat changes
-  </label>
-
+  <p class="helper">
+  👉 <a
+    href="https://register.beartracks.ualberta.ca/criteria.jsp"
+    target="_blank"
+    rel="noopener noreferrer"
+  >
+    Open BearTracks Schedule Builder
+  </a>
+  <br />
+  Build your schedule, then copy the URL and paste it below.
+</p>
 
   <section class="card">
     <h2>Add Monitor</h2>
@@ -25,6 +31,11 @@
       <input required placeholder="Course Code (e.g. CMPUT 402)" id="course_code" />
       <input required placeholder="Section Label (e.g. LEC B1)" id="section_label" />
       <input type="number" min="30" value="90" id="interval" />
+
+      <label>
+        <input type="checkbox" id="notify" checked />
+        Email me on seat changes
+      </label>
 
       <button type="submit">Start Monitoring</button>
     </form>
@@ -38,6 +49,8 @@
           <th>Course</th>
           <th>Section</th>
           <th>Last Seen</th>
+          <th>Last Checked</th>
+          <th>Last Changed</th>
           <th>Status</th>
           <th></th>
         </tr>
