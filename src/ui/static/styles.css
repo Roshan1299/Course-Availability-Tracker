@@ -51,11 +51,24 @@ form button:hover {
 table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: auto; /* Allow table to adjust to content */
 }
 
 th, td {
   padding: 0.6rem;
   border-bottom: 1px solid #eee;
+  text-align: left;
+  white-space: nowrap; /* Prevent text wrapping in table cells */
+}
+
+th {
+  background-color: #f8fafc;
+  font-weight: 600;
+}
+
+/* Make sure the last column (with button) stays compact */
+td:last-child, th:last-child {
+  width: 1%;
 }
 
 .status {
