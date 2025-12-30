@@ -7,109 +7,125 @@ async function fetchMonitors() {
 
   console.log("Fetched monitors:", monitors); // Debug log
 
+  // Clear the table first
   table.innerHTML = "";
-  monitors.forEach(m => {
-    console.log("Processing monitor:", m); // Debug log
 
-    const row = document.createElement("tr");
+  if (monitors.length === 0) {
+    // Show empty state
+    const emptyRow = document.createElement("tr");
+    emptyRow.className = "empty";
+    emptyRow.innerHTML = '<td colspan="8">No monitors running yet</td>';
+    table.appendChild(emptyRow);
+  } else {
+    monitors.forEach(m => {
+      console.log("Processing monitor:", m); // Debug log
 
-    // Format timestamp for display (show only time if from today, otherwise full date)
-    const formatTimestamp = (timestamp) => {
-      if (!timestamp) return "—";
-      const date = new Date(timestamp);
-      const today = new Date();
-      // If same day, show only time
-      if (date.getDate() === today.getDate() &&
-          date.getMonth() === today.getMonth() &&
-          date.getFullYear() === today.getFullYear()) {
-        return date.toLocaleTimeString();
-      }
-      // Otherwise show date and time
-      return date.toLocaleString();
-    };
+      const row = document.createElement("tr");
 
-    // Check if timestamps exist in the data
-    console.log("Timestamps for monitor:", {
-      last_checked_at: m.last_checked_at,
-      last_changed_at: m.last_changed_at
-    });
-
-    // Format health status with appropriate styling
-    const getHealthClass = (health) => {
-      switch(health) {
-        case 'healthy': return 'status healthy';
-        case 'stale': return 'status stale';
-        case 'error': return 'status error';
-        case 'stopped': return 'status stopped';
-        default: return 'status unknown';
-      }
-    };
-
-    // Format mode status with appropriate styling
-    const getModeClass = (mode) => {
-      switch(mode) {
-        case 'active': return 'status active';
-        case 'paused': return 'status paused';
-        case 'stopped': return 'status stopped';
-        default: return 'status unknown';
-      }
-    };
-
-    row.innerHTML = `
-      <td>${m.course_code}</td>
-      <td>${m.section_label}</td>
-      <td>${m.last_seen ?? "—"}</td>
-      <td>${formatTimestamp(m.last_checked_at)}</td>
-      <td>${formatTimestamp(m.last_changed_at)}</td>
-      <td class="${getModeClass(m.mode)}">${m.mode}</td>
-      <td class="${getHealthClass(m.health)}">${m.health}</td>
-      <td class="actions">
-        <button class="history-btn">View History</button>
-        ${m.mode === 'active' ?
-          `<button class="pause-btn">Pause</button>` :
-          `<button class="resume-btn">Resume</button>`
+      // Format timestamp for display (show only time if from today, otherwise full date)
+      const formatTimestamp = (timestamp) => {
+        if (!timestamp) return "—";
+        const date = new Date(timestamp);
+        const today = new Date();
+        // If same day, show only time
+        if (date.getDate() === today.getDate() &&
+            date.getMonth() === today.getMonth() &&
+            date.getFullYear() === today.getFullYear()) {
+          return date.toLocaleTimeString();
         }
-        <button class="stop-btn">Stop</button>
-      </td>
-    `;
+        // Otherwise show date and time
+        return date.toLocaleString();
+      };
 
-    console.log("Row HTML:", row.innerHTML); // Debug log
+      // Check if timestamps exist in the data
+      console.log("Timestamps for monitor:", {
+        last_checked_at: m.last_checked_at,
+        last_changed_at: m.last_changed_at
+      });
 
-    // Handle stop button
-    const stopBtn = row.querySelector(".stop-btn");
-    stopBtn.onclick = async () => {
-      await fetch(`/monitors/${m.id}`, { method: "DELETE" });
-      fetchMonitors();
-    };
+      // Format health status with appropriate styling
+      const getHealthClass = (health) => {
+        switch(health) {
+          case 'healthy': return 'status healthy';
+          case 'stale': return 'status stale';
+          case 'error': return 'status error';
+          case 'stopped': return 'status stopped';
+          default: return 'status unknown';
+        }
+      };
 
-    // Handle pause button
-    const pauseBtn = row.querySelector(".pause-btn");
-    if (pauseBtn) {
-      pauseBtn.onclick = async () => {
-        await fetch(`/monitors/${m.id}/pause`, { method: "POST" });
+      // Format mode status with appropriate styling
+      const getModeClass = (mode) => {
+        switch(mode) {
+          case 'active': return 'status active';
+          case 'paused': return 'status paused';
+          case 'stopped': return 'status stopped';
+          default: return 'status unknown';
+        }
+      };
+
+      // Create timestamp cells with tooltips
+      const lastCheckedFormatted = formatTimestamp(m.last_checked_at);
+      const lastCheckedTooltip = m.last_checked_at ? new Date(m.last_checked_at).toISOString() : "";
+      const lastChangedFormatted = formatTimestamp(m.last_changed_at);
+      const lastChangedTooltip = m.last_changed_at ? new Date(m.last_changed_at).toISOString() : "";
+
+      row.innerHTML = `
+        <td>${m.course_code}</td>
+        <td>${m.section_label}</td>
+        <td>${m.last_seen ?? "—"}</td>
+        <td title="${lastCheckedTooltip}">${lastCheckedFormatted}</td>
+        <td title="${lastChangedTooltip}">${lastChangedFormatted}</td>
+        <td class="${getModeClass(m.mode)}">${m.mode}</td>
+        <td class="${getHealthClass(m.health)}">${m.health}</td>
+        <td class="actions">
+          <button class="history-btn">View History</button>
+          ${m.mode === 'active' ?
+            `<button class="pause-btn">Pause</button>` :
+            `<button class="resume-btn">Resume</button>`
+          }
+          <button class="stop-btn">Stop</button>
+        </td>
+      `;
+
+      console.log("Row HTML:", row.innerHTML); // Debug log
+
+      // Handle stop button
+      const stopBtn = row.querySelector(".stop-btn");
+      stopBtn.onclick = async () => {
+        await fetch(`/monitors/${m.id}`, { method: "DELETE" });
         fetchMonitors();
       };
-    }
 
-    // Handle resume button
-    const resumeBtn = row.querySelector(".resume-btn");
-    if (resumeBtn) {
-      resumeBtn.onclick = async () => {
-        await fetch(`/monitors/${m.id}/resume`, { method: "POST" });
-        fetchMonitors();
-      };
-    }
+      // Handle pause button
+      const pauseBtn = row.querySelector(".pause-btn");
+      if (pauseBtn) {
+        pauseBtn.onclick = async () => {
+          await fetch(`/monitors/${m.id}/pause`, { method: "POST" });
+          fetchMonitors();
+        };
+      }
 
-    // Handle history button
-    const historyBtn = row.querySelector(".history-btn");
-    if (historyBtn) {
-      historyBtn.onclick = () => {
-        showHistoryModal(m);
-      };
-    }
+      // Handle resume button
+      const resumeBtn = row.querySelector(".resume-btn");
+      if (resumeBtn) {
+        resumeBtn.onclick = async () => {
+          await fetch(`/monitors/${m.id}/resume`, { method: "POST" });
+          fetchMonitors();
+        };
+      }
 
-    table.appendChild(row);
-  });
+      // Handle history button
+      const historyBtn = row.querySelector(".history-btn");
+      if (historyBtn) {
+        historyBtn.onclick = () => {
+          showHistoryModal(m);
+        };
+      }
+
+      table.appendChild(row);
+    });
+  }
 }
 
 form.onsubmit = async (e) => {
@@ -173,10 +189,13 @@ async function showHistoryModal(monitor) {
           timeStr = date.toLocaleString();
         }
 
+        // Create timestamp with tooltip
+        const timeTooltip = n.timestamp ? new Date(n.timestamp).toISOString() : "";
+
         row.innerHTML = `
           <td>${n.old_value}</td>
           <td>${n.new_value}</td>
-          <td>${timeStr}</td>
+          <td title="${timeTooltip}">${timeStr}</td>
         `;
 
         tbody.appendChild(row);
