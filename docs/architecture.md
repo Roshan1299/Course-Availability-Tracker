@@ -1,139 +1,118 @@
 # Architecture Overview
 
-This document describes the internal architecture and data flow of the
-Course Seat Monitor system.
+This document describes the internal architecture of the Course Availability Tracker.
 
-The project is intentionally structured as a **backend-style worker**
-rather than a browser-based extension.
+The system is designed as a **stateful monitoring service**, not a browser extension,
+to reliably handle JavaScript-heavy pages.
 
 ---
 
 ## 🎯 Design Goals
 
-- Reliability on JavaScript-heavy pages
-- Deterministic refresh behavior
+- Reliability on dynamic pages
 - Clear separation of concerns
-- Easy extensibility into a production service
-- Minimal external dependencies
+- Observable system state
+- Persisted monitoring state
+- Easy extensibility into production
 
 ---
 
-## 🧩 High-Level Flow
+## 🧩 High-Level Architecture
 
 ![High-level architecture flow](diagrams/High-Level.png)
 
 ---
 
-### Runtime Sequence Diagram
+## 🧱 Component Responsibilities
 
-![Runtime sequence diagram](diagrams/Sequence-Diagram.png)
+### API Layer
+- **FastAPI Server**: Handles HTTP requests and serves static files
+- **Routes**: Manages monitor lifecycle (create, list, delete, pause, resume)
 
----
+### Service Layer
+- **Monitor Manager**: Orchestrates monitoring tasks and state
+- **Persistence Service**: Handles atomic disk storage of monitor configurations
+- **Notification Store**: Logs and persists notification history
 
-## 🧱 Component Dependencies
-
-![Component dependency diagram](diagrams/Component-Responsibility-Diagram.png)
-
----
-## 🔄 Execution Lifecycle
-
-1. The scheduler triggers a monitoring cycle
-2. The scraper:
-   - Reloads the page using `page.goto`
-   - Waits for client-side rendering to complete
-   - Extracts the seat count from the DOM
-3. The current value is compared with persisted state
-4. If a change is detected:
-   - A notification is sent
-   - State is updated on disk
-5. The system sleeps until the next cycle
+### Browser Layer
+- **Playwright Browser**: Executes JavaScript-heavy pages and extracts data
 
 ---
 
-## 🧱 Module Responsibilities
+## 🔄 Monitoring Lifecycle
 
-### `main.py`
-- Application entry point
-- Controls scheduling and retries
-- Orchestrates scraping, comparison, and notification
-
-### `scraper.py`
-- Encapsulates all Playwright logic
-- Handles dynamic page loading
-- Executes DOM queries in the browser context
-
-### `state.py`
-- Persists previously observed seat values
-- Prevents duplicate notifications
-- Designed to be easily replaced by a database or cache
-
-### `notifier.py`
-- Sends email notifications via SMTP
-- Abstracted to allow future notification channels
-
-### `config.py`
-- Centralized configuration
-- Loads environment variables
-- Separates runtime configuration from logic
+![Runtime sequence diagram](diagrams/lifecycle.png)
 
 ---
 
-## 🧠 Why Headless Browsing?
+## 🧠 State Model
 
-Many university registration systems rely on:
-- Client-side rendering
-- Asynchronous API calls
-- DOM replacement after page load
+### User Intent (Mode)
+- `active`: monitoring runs
+- `paused`: temporarily halted
+- `stopped`: permanently removed
 
-Static HTTP requests and browser extensions are unreliable in these cases.
+### System Health
+- `healthy`: data fetched successfully
+- `stale`: expected data not found
+- `error`: exception during fetch
 
-Using a headless browser ensures:
-- JavaScript execution completes
-- DOM state matches what a real user sees
-- Consistent and repeatable scraping behavior
+This separation avoids overloading a single "status" field.
 
----
+## 🔁 Monitor State Model
 
-## 🔁 State Management Strategy
-
-- State is stored locally in a text file
-- State is loaded once at startup
-- State is updated only on detected changes
-- This minimizes I/O while maintaining correctness.
-
-The design intentionally mirrors how production monitoring workers
-manage state before migrating to databases or distributed caches.
+![Runtime sequence diagram](diagrams/stateDiagram-v2.png)
 
 ---
 
-## 🚀 Scalability Considerations
+## 💾 Persistence Strategy
 
-This architecture can be extended to:
-- Monitor multiple courses per worker
-- Run multiple workers in parallel
-- Store state in Redis or a database
-- Expose a REST API for user management
+- Stored as JSON on disk
+- Atomic writes via temp files
+- Includes:
+  - monitor config
+  - last seen value
+  - timestamps
+  - notification preferences
+  - mode and health state
 
-The current design prioritizes correctness and clarity over premature scaling.
-
----
-
-## 🧪 Failure Handling
-
-- Timeouts are caught and logged
-- Temporary page failures do not crash the service
-- Missing state files are handled gracefully
+On restart:
+- Monitors are restored
+- Tasks are resumed
+- UI reflects persisted state
 
 ---
 
-## 📌 Summary
+## 📜 Notification History
 
-The Course Seat Monitor is a small but well-structured backend system that
-demonstrates:
-- Real-world scraping challenges
-- Asynchronous I/O handling
-- Stateful change detection
-- Clean modular design
+Each detected seat change is logged with:
+- monitor ID
+- previous value
+- new value
+- timestamp
 
-The architecture is intentionally designed to scale into a production-grade
-monitoring service with minimal refactoring.
+This enables:
+- auditability
+- UI history modal
+- future analytics
+
+---
+
+## ⚠️ Failure Handling
+
+- Page timeouts are caught
+- Missing elements mark monitor as stale
+- Errors do not crash the service
+- Monitors continue independently
+
+---
+
+## 🚀 Scalability Path
+
+Without architectural changes, this system can grow into:
+- multi-user service
+- DB-backed workers
+- distributed task runners
+- notification queues
+
+The current design mirrors real production monitoring systems.
