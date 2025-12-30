@@ -1,153 +1,117 @@
-# Course Seat Monitor
+# 🎓 Course Availability Tracker
 
-A backend-style Python service that monitors dynamically rendered university
-course registration pages and sends email notifications when seat availability
-changes.
+A production-style monitoring system that tracks university course seat availability
+on JavaScript-heavy registration pages and notifies users when seats change.
 
-This project is designed to reliably track seat counts on JavaScript-heavy
-web pages that traditional browser extensions and simple scrapers struggle
-to handle.
+Built as a **backend worker + API + dashboard UI**, not a browser extension, to ensure
+reliability on dynamically rendered pages.
 
 ---
 
 ## ✨ Features
 
-- Monitors **dynamically loaded** course pages using a headless browser
-- Periodically refreshes the page to fetch **live seat data**
-- Detects **state changes** (seat count up or down)
-- Sends **email notifications** on changes
-- Uses persistent state to avoid duplicate alerts
-- Modular, production-oriented code structure
+- ✅ Reliable scraping using a headless browser (Playwright)
+- 🔁 Periodic monitoring with configurable intervals
+- ⏸ Pause / ▶ Resume / ⛔ Stop monitors
+- 🧠 Clear separation between **user intent** and **system health**
+- 📬 Email notifications on seat changes
+- 📜 Persistent notification history per monitor
+- 💾 Disk-backed persistence (monitors survive restarts)
+- 📊 Live dashboard with timestamps and status indicators
 
 ---
 
-## 🧠 Motivation
+## 🧠 Key Concepts
 
-Most existing solutions (browser extensions, DOM polling, Tampermonkey scripts)
-are unreliable for modern, JavaScript-heavy websites:
+### User Intent vs System State
 
-- They depend on open tabs
-- They break when the DOM is re-rendered
-- They are throttled by browsers
-- They cannot run reliably in the background
+This system intentionally separates **what the user wants** from **what the system observes**:
 
-This project solves those issues by using a **headless browser worker**
-that reloads the page on a fixed schedule and extracts seat data after
-client-side rendering completes.
+| Category | Meaning |
+|-------|--------|
+| **Mode** | User intent: `active`, `paused`, `stopped` |
+| **Health** | System state: `healthy`, `stale`, `error` |
 
----
-
-## 🏗️ Architecture Overview
-
-- **Scheduler** periodically reloads the target page
-- **Scraper** extracts seat data after dynamic content loads
-- **State manager** tracks previously seen values
-- **Notifier** sends alerts when changes are detected
-
-For a detailed breakdown, see  
-[`docs/architecture.md`](docs/architecture.md)
+This distinction makes the UI easier to understand and avoids ambiguous "status" labels.
 
 ---
 
-## 🧰 Tech Stack
+## 🚀 How It Works
 
-- **Python 3.10+**
-- **Playwright** (Chromium)
-- **AsyncIO**
-- **SMTP (Gmail)**
-- **python-dotenv**
+1. User builds a schedule in BearTracks
+2. User copies the resulting URL
+3. Tracker loads the page in a headless browser
+4. JavaScript executes fully
+5. Seat values are extracted from the DOM
+6. Changes are detected and persisted
+7. Notifications are sent (if enabled)
 
 ---
 
-## 🚀 Getting Started
+## 🖥️ Dashboard UI
 
-### 1. Clone the repository
+The web UI allows users to:
+
+- Add monitors using BearTracks URLs
+- See current seat counts
+- View **last checked** and **last changed** timestamps
+- Pause / resume monitors without losing state
+- View notification history in a modal
+- Understand system health at a glance
+
+---
+
+## 📦 Tech Stack
+
+- **Backend**: FastAPI, asyncio
+- **Scraping**: Playwright (Chromium)
+- **Frontend**: Vanilla HTML/CSS/JS
+- **Persistence**: Atomic JSON file storage
+- **Notifications**: SMTP (Gmail App Password)
+
+---
+
+## 🏃 Running Locally
 
 ```bash
-git clone https://github.com/your-username/course-seat-monitor.git
-cd course-seat-monitor
-```
-
-### 2. Create and activate a virtual environment
-
-```bash
-# Linux/macOS
+# create virtual env
 python -m venv venv
 source venv/bin/activate
 
-# Windows
-venv\Scripts\Activate.ps1
-```
-
-### 3. Install dependencies
-
-```bash
+# install deps
 pip install .
+playwright install
+
+# run server
+scripts/run_local.sh
 ```
 
-### 4. Install Playwright browser (required)
-
-```bash
-playwright install chromium
-```
-
-### 5. Configure environment variables
-
-```bash
-cp .env.example .env
-```
-
-Edit `.env` and provide:
-- `SENDER_EMAIL`: Gmail address
-- `GMAIL_APP_PASSWORD`: Gmail App Password
-- `RECIPIENT_EMAIL`: Recipient email address
-
-### 6. Run the monitor
-
-```bash
-python -m seat_monitor.main
-```
+Open: http://localhost:8000
 
 ---
 
-## 📬 Notification Behavior
-
-- The monitor checks seat availability at a configurable interval
-- An email is sent whenever the seat count changes
-- State is persisted across runs to prevent duplicate alerts
-
----
-
-## ⚠️ Runtime Notes
-
-- The service must remain running to monitor changes
-- The machine must not be sleeping
-- The browser UI does not need to be open
-- For long local runs on macOS:
-  ```bash
-  caffeinate -i
-  ```
-
----
-
-## 🔒 Security Notes
-
-- Secrets are stored in environment variables
-- `.env` files are excluded from version control
-- Gmail App Passwords should be rotated if compromised
-
----
-
-## 📈 Future Improvements
-
-- Multi-course and multi-user support
-- Web dashboard for managing monitored courses
-- Notification channels (SMS, Discord, Push)
-- Deployment as a cloud-based service
-
----
-
-## 📄 License
+⚠️ **Disclaimer**
 
 This project is for educational and personal use.
-Please respect the terms of service of the monitored websites.
+Always respect your institution's terms of service.
+
+---
+
+## 📈 Roadmap
+
+- Multi-user support
+- Auth + per-user email settings
+- Database-backed persistence
+- Rate limiting & backoff
+- Deployment-ready worker model
+
+---
+
+## 🧑‍💻 Author
+
+Built by Roshan as a backend-focused system demonstrating:
+
+- async workers
+- stateful monitoring
+- UI ↔ API coordination
+- real-world scraping challenges
