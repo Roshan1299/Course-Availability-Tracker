@@ -22,4 +22,4 @@ build/
 course_seat_monitor.egg-info/
 
 Old/
-monitors.json
+*.json
