@@ -7,6 +7,7 @@ from datetime import datetime
 from seat_monitor.scraper import fetch_seat_value
 from seat_monitor.notifier import send_email
 from services.persistence import load_state, save_state
+from services.notification_store import log_notification
 
 
 @dataclass
@@ -21,6 +22,8 @@ class Monitor:
     task: asyncio.Task
     last_checked_at: Optional[str] = None
     last_changed_at: Optional[str] = None
+    mode: str = "active"  # "active", "paused", "stopped"
+    health: str = "healthy"  # "healthy", "stale", "error", "stopped"
 
 
 class MonitorManager:
@@ -39,6 +42,9 @@ class MonitorManager:
     ):
         """Background loop for a single monitor."""
         while True:
+            # Get monitor reference outside the try block to ensure it's available in exception handler
+            monitor = self.monitors[monitor_id]
+
             try:
                 value = await fetch_seat_value(
                     page,
@@ -47,14 +53,16 @@ class MonitorManager:
                     section_label=section_label,
                 )
 
-                monitor = self.monitors[monitor_id]
-
                 # Update last checked timestamp
                 current_time = datetime.now().isoformat()
                 monitor.last_checked_at = current_time
+                # Update health to healthy since we successfully checked
+                monitor.health = "healthy"
 
                 if value is None:
                     print(f"[monitor {monitor_id}] WARNING: Could not find seat value for {course_code} {section_label}")
+                    # Consider this as potentially stale if consistently failing
+                    monitor.health = "stale"
                 else:
                     if monitor.last_seen is None:
                         monitor.last_seen = value
@@ -65,6 +73,14 @@ class MonitorManager:
                         # Update persistence with new last_seen and timestamps
                         self._persist_state()
                     elif value != monitor.last_seen:
+                        log_notification(
+                                monitor_id=monitor.id,
+                                course_code=course_code,
+                                section_label=section_label,
+                                old_value=monitor.last_seen,
+                                new_value=value,
+                            )
+
                         print(
                             f"[monitor {monitor_id}] CHANGE {monitor.last_seen} → {value} at {current_time}"
                         )
@@ -94,10 +110,9 @@ class MonitorManager:
 
             except Exception as e:
                 print(f"[monitor {monitor_id}] error: {e}")
-
-            finally:
+                # Update health to error since we encountered an exception
+                monitor.health = "error"
                 self._persist_state()
-                await asyncio.sleep(interval)
 
             await asyncio.sleep(interval)
 
@@ -140,6 +155,8 @@ class MonitorManager:
             task=task,
             last_checked_at=current_time,  # Initialize with current time
             last_changed_at=None,  # Will be set when a change occurs
+            mode="active",  # New monitors start in active mode
+            health="healthy",  # New monitors start in healthy state
         )
 
         self._persist_state()
@@ -151,12 +168,54 @@ class MonitorManager:
             return False
 
         monitor.task.cancel()
+        monitor.mode = "stopped"
+        monitor.health = "stopped"
         del self.monitors[monitor_id]
         self._persist_state()
         return True
 
     def list_monitors(self):
         return list(self.monitors.values())
+
+    async def pause_monitor(self, monitor_id: str) -> bool:
+        """Pause a monitor (stop the task but keep the monitor in memory)"""
+        monitor = self.monitors.get(monitor_id)
+        if not monitor:
+            return False
+
+        if monitor.task:
+            monitor.task.cancel()
+            monitor.mode = "paused"
+            monitor.health = "stopped"  # Task is not running
+            self._persist_state()
+        return True
+
+    async def resume_monitor(self, monitor_id: str, browser) -> bool:
+        """Resume a paused monitor (restart the task)"""
+        monitor = self.monitors.get(monitor_id)
+        if not monitor or monitor.mode != "paused":
+            return False
+
+        # Create new context and page
+        context = await browser.new_context()
+        page = await context.new_page()
+
+        # Create new task
+        monitor.task = asyncio.create_task(
+            self._monitor_loop(
+                monitor.id,
+                page,
+                monitor.url,
+                monitor.course_code,
+                monitor.section_label,
+                monitor.interval,
+            )
+        )
+
+        monitor.mode = "active"
+        monitor.health = "healthy"
+        self._persist_state()
+        return True
     
     def _load_persisted_monitors(self):
         persisted = load_state()
@@ -173,6 +232,8 @@ class MonitorManager:
                 task=None,  # task will be created later when resumed
                 last_checked_at=data.get("last_checked_at"),  # Could be None for old monitors
                 last_changed_at=data.get("last_changed_at"),  # Could be None for old monitors
+                mode=data.get("mode", "active"),  # Default to active for old monitors
+                health=data.get("health", "healthy"),  # Default to healthy for old monitors
             )
 
     def _persist_state(self):
@@ -187,6 +248,8 @@ class MonitorManager:
                     "notify": m.notify,
                     "last_checked_at": m.last_checked_at,
                     "last_changed_at": m.last_changed_at,
+                    "mode": m.mode,
+                    "health": m.health,
                 }
                 for m in self.monitors.values()
             }
