@@ -18,3 +18,5 @@ class MonitorStatus(BaseModel):
     running: bool
     last_checked_at: Optional[str]
     last_changed_at: Optional[str]
+    mode: str = "active"  # "active", "paused", "stopped"
+    health: str = "healthy"  # "healthy", "stale", "error", "stopped"
