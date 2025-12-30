@@ -14,7 +14,7 @@ reliability on dynamically rendered pages.
 - 🔁 Periodic monitoring with configurable intervals
 - ⏸ Pause / ▶ Resume / ⛔ Stop monitors
 - 🧠 Clear separation between **user intent** and **system health**
-- 📬 Email notifications on seat changes
+- 📬 Email notifications on seat changes (per monitor)
 - 📜 Persistent notification history per monitor
 - 💾 Disk-backed persistence (monitors survive restarts)
 - 📊 Live dashboard with timestamps and status indicators
@@ -53,6 +53,7 @@ This distinction makes the UI easier to understand and avoids ambiguous "status"
 The web UI allows users to:
 
 - Add monitors using BearTracks URLs
+- Specify email addresses for each monitor
 - See current seat counts
 - View **last checked** and **last changed** timestamps
 - Pause / resume monitors without losing state
@@ -71,22 +72,19 @@ The web UI allows users to:
 
 ---
 
-## 🏃 Running Locally
+## 🚀 Getting Started
 
-```bash
-# create virtual env
-python -m venv venv
-source venv/bin/activate
+### Docker Setup (Recommended)
+For the easiest setup, use Docker. See the [Setup Guide](docs/setup.md) for detailed instructions.
 
-# install deps
-pip install .
-playwright install
+### Local Setup (Alternative)
+For local installation without Docker, see the [Setup Guide](docs/setup.md).
 
-# run server
-scripts/run_local.sh
-```
+---
 
-Open: http://localhost:8000
+## 🌐 Accessing the Application
+
+After starting the application, open: http://localhost:8000
 
 ---
 
