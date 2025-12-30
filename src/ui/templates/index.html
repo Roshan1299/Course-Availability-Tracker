@@ -33,10 +33,12 @@
     <h2>Set Up Monitoring</h2>
 
     <form id="monitor-form">
-      <input required placeholder="Paste your BearTracks URL here" id="url" />
-      <input required placeholder="Course Code (e.g. CMPUT 402)" id="course_code" />
-      <input required placeholder="Section (e.g. LEC B1, LAB D1)" id="section_label" />
-      <input type="number" min="30" value="90" id="interval" placeholder="Check every X seconds" />
+      <input required placeholder="Paste your BearTracks URL here" id="url" class="full-width" />
+      <div class="form-row">
+        <input required placeholder="Course Code (e.g. CMPUT 402)" id="course_code" class="small-field" />
+        <input required placeholder="Section (e.g. LEC B1, LAB D1)" id="section_label" class="small-field" />
+        <input type="number" min="30" value="90" id="interval" placeholder="Interval (sec)" class="small-field" />
+      </div>
 
       <label>
         <input type="checkbox" id="notify" checked />
@@ -79,7 +81,11 @@
           <th>Actions</th>
         </tr>
       </thead>
-      <tbody id="monitors"></tbody>
+      <tbody id="monitors">
+        <tr class="empty">
+          <td colspan="8">No monitors running yet</td>
+        </tr>
+      </tbody>
     </table>
   </section>
 
