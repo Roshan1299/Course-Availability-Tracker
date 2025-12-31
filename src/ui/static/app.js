@@ -139,7 +139,8 @@ form.onsubmit = async (e) => {
       course_code: document.getElementById("course_code").value,
       section_label: document.getElementById("section_label").value,
       check_every_seconds: Number(document.getElementById("interval").value),
-      notify: document.getElementById("notify").checked
+      notify: document.getElementById("email").value ? true : false,
+      email: document.getElementById("email").value
     })
   });
 
