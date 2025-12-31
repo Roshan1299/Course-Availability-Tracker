@@ -9,10 +9,13 @@ from seat_monitor.config import (
     RECIPIENT_EMAIL,
 )
 
-def send_email(subject: str, body: str) -> None:
+def send_email(subject: str, body: str, recipient_email: str = None) -> None:
+    # Use the provided recipient email, or fall back to the default from config
+    recipient = recipient_email if recipient_email else RECIPIENT_EMAIL
+
     msg = EmailMessage()
     msg["From"] = SENDER_EMAIL
-    msg["To"] = RECIPIENT_EMAIL
+    msg["To"] = recipient
     msg["Subject"] = subject
     msg.set_content(body)
 

@@ -19,5 +19,5 @@ SENDER_EMAIL = os.getenv("SENDER_EMAIL")
 SENDER_APP_PASSWORD = os.getenv("GMAIL_APP_PASSWORD")
 RECIPIENT_EMAIL = os.getenv("RECIPIENT_EMAIL")
 
-if not all([SENDER_EMAIL, SENDER_APP_PASSWORD, RECIPIENT_EMAIL]):
-    raise RuntimeError("Missing email environment variables")
+if not all([SENDER_EMAIL, SENDER_APP_PASSWORD]):
+    raise RuntimeError("Missing required email environment variables (SENDER_EMAIL, SENDER_APP_PASSWORD)")

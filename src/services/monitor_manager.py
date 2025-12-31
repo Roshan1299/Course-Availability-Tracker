@@ -24,6 +24,7 @@ class Monitor:
     last_changed_at: Optional[str] = None
     mode: str = "active"  # "active", "paused", "stopped"
     health: str = "healthy"  # "healthy", "stale", "error", "stopped"
+    email: str = ""
 
 
 class MonitorManager:
@@ -85,7 +86,7 @@ class MonitorManager:
                             f"[monitor {monitor_id}] CHANGE {monitor.last_seen} → {value} at {current_time}"
                         )
 
-                        if monitor.notify:
+                        if monitor.notify and monitor.email:
                             send_email(
                                 subject=f"Seat change: {course_code} {section_label}",
                                 body=(
@@ -97,6 +98,7 @@ class MonitorManager:
                                     f"Time: {current_time}\n"
                                     f"URL: {url}"
                                 ),
+                                recipient_email=monitor.email,
                             )
 
                         monitor.last_seen = value
@@ -124,6 +126,7 @@ class MonitorManager:
         section_label: str,
         interval: int,
         notify: bool,
+        email: str = "",
     ) -> str:
         monitor_id = str(uuid4())
 
@@ -157,6 +160,7 @@ class MonitorManager:
             last_changed_at=None,  # Will be set when a change occurs
             mode="active",  # New monitors start in active mode
             health="healthy",  # New monitors start in healthy state
+            email=email,  # Store the user's email
         )
 
         self._persist_state()
@@ -234,6 +238,7 @@ class MonitorManager:
                 last_changed_at=data.get("last_changed_at"),  # Could be None for old monitors
                 mode=data.get("mode", "active"),  # Default to active for old monitors
                 health=data.get("health", "healthy"),  # Default to healthy for old monitors
+                email=data.get("email", ""),  # Default to empty string for old monitors
             )
 
     def _persist_state(self):
@@ -250,6 +255,7 @@ class MonitorManager:
                     "last_changed_at": m.last_changed_at,
                     "mode": m.mode,
                     "health": m.health,
+                    "email": m.email,
                 }
                 for m in self.monitors.values()
             }
