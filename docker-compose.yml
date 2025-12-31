@@ -1,0 +1,18 @@
+version: "3.9"
+
+services:
+  course-tracker:
+    build: .
+    container_name: course-availability-tracker
+    ports:
+      - "8000:8000"
+
+    # Environment variables (users override later)
+    env_file:
+      - .env
+
+    volumes:
+      # Persist monitor state + notifications
+      - ./data:/app/data
+
+    restart: unless-stopped
