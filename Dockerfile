@@ -8,22 +8,14 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-# Copy project metadata
-COPY pyproject.toml ./
+# Copy all project files
+COPY . .
 
 # Install Python dependencies
 RUN pip install --no-cache-dir .
 
 # Install Playwright browsers
 RUN playwright install chromium
-
-# Copy application code
-COPY src ./src
-COPY data ./data
-COPY docs ./docs
-COPY scripts ./scripts
-# Copy UI files
-COPY src/ui ./ui
 
 EXPOSE 8000
 
