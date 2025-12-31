@@ -17,6 +17,7 @@ async def create_monitor(payload: MonitorCreate, request: Request):
         section_label=payload.section_label,
         interval=payload.check_every_seconds,
         notify=payload.notify,
+        email=payload.email,
     )
 
     monitor = manager.monitors[monitor_id]
@@ -31,6 +32,7 @@ async def create_monitor(payload: MonitorCreate, request: Request):
         last_changed_at=monitor.last_changed_at,
         mode=monitor.mode,
         health=monitor.health,
+        email=monitor.email,
     )
 
 
@@ -49,6 +51,7 @@ def list_monitors(request: Request):
             last_changed_at=m.last_changed_at,
             mode=m.mode,
             health=m.health,
+            email=m.email,
         )
         for m in manager.list_monitors()
     ]

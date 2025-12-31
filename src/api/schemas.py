@@ -8,6 +8,7 @@ class MonitorCreate(BaseModel):
     section_label: str
     check_every_seconds: int = 90
     notify: bool = True
+    email: str = ""
 
 
 class MonitorStatus(BaseModel):
@@ -20,3 +21,4 @@ class MonitorStatus(BaseModel):
     last_changed_at: Optional[str]
     mode: str = "active"  # "active", "paused", "stopped"
     health: str = "healthy"  # "healthy", "stale", "error", "stopped"
+    email: str = ""
