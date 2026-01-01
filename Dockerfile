@@ -17,6 +17,9 @@ RUN pip install --no-cache-dir .
 # Install Playwright browsers
 RUN playwright install chromium
 
+# Create data directory with proper permissions
+RUN mkdir -p /app/data
+
 EXPOSE 8000
 
 # Default runtime envs (safe defaults)
