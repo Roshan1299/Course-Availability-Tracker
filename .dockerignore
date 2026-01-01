@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+
+# Env / secrets
+.env
+
+# Git
+.git
+.gitignore
+
+# OS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Old / experiments
+Old/
+Python-playwright Alternative/
+
+# Data directory (will be mounted as volume and may have permission issues)
+data/
+# Also ignore any existing data files that might cause permission issues
+data/*
